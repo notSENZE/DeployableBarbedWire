@@ -24,6 +24,8 @@ internal sealed class DeployableBarbedWireModule
     private const float PlacementGroundClearance = 0.16f;
     private const float PlacementEndInset = 0.08f;
     private const float PlacementSideInset = 0.05f;
+    private const float VisualHeightScale = 1.55f;
+    private const float VisualDepthScale = 1.2f;
     private const float PickupDistance = 4f;
     private const float PickupSphereRadius = 0.18f;
     private const float PickupHoldDuration = 0.75f;
@@ -340,11 +342,12 @@ internal sealed class DeployableBarbedWireModule
             root.transform.SetPositionAndRotation(position, rotation);
 
             var collider = root.AddComponent<BoxCollider>();
-            collider.center = new Vector3(0f, BarbedWireMeshFactory.Height * 0.5f, 0f);
+            var visualHeight = BarbedWireMeshFactory.Height * VisualHeightScale;
+            collider.center = new Vector3(0f, visualHeight * 0.5f, 0f);
             collider.size = new Vector3(
                 BarbedWireMeshFactory.Length,
-                BarbedWireMeshFactory.Height,
-                BarbedWireMeshFactory.Depth);
+                visualHeight,
+                BarbedWireMeshFactory.Depth * VisualDepthScale);
             collider.isTrigger = true;
 
             var marker = root.AddComponent<PlacedBarbedWire>();
@@ -531,7 +534,11 @@ internal sealed class DeployableBarbedWireModule
         visual.transform.SetParent(root.transform, false);
 
         var bounds = _wireMesh.bounds;
-        visual.transform.localPosition = new Vector3(-bounds.center.x, -bounds.min.y, -bounds.center.z);
+        visual.transform.localScale = new Vector3(1f, VisualHeightScale, VisualDepthScale);
+        visual.transform.localPosition = new Vector3(
+            -bounds.center.x,
+            -bounds.min.y * VisualHeightScale,
+            -bounds.center.z);
         visual.AddComponent<MeshFilter>().sharedMesh = _wireMesh;
         var renderer = visual.AddComponent<MeshRenderer>();
         renderer.sharedMaterial = material;

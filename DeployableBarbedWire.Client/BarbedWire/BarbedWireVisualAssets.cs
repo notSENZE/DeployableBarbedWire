@@ -38,7 +38,7 @@ internal sealed class BarbedWireVisualAssets : IDisposable
         using var archive = new ZipArchive(archiveStream, ZipArchiveMode.Read, false);
 
         var mesh = ParseObj(ReadText(archive, "wire.obj"));
-        var albedo = LoadTexture(archive, "albedo.png", "Deployable Barbed Wire Albedo", false);
+        var albedo = LoadTexture(archive, "albedo.png", "Deployable Barbed Wire Albedo", false, 4);
         var metallic = LoadTexture(archive, "metallic.png", "Deployable Barbed Wire Metallic", true);
         var normal = LoadTexture(archive, "normal.png", "Deployable Barbed Wire Normal", true);
         var material = CreateMaterial(albedo, metallic, normal);
@@ -142,23 +142,87 @@ internal sealed class BarbedWireVisualAssets : IDisposable
         return entry.Open();
     }
 
-    private static Texture2D LoadTexture(ZipArchive archive, string name, string textureName, bool linear)
+    private static Texture2D LoadTexture(
+        ZipArchive archive,
+        string name,
+        string textureName,
+        bool linear,
+        int alphaDilationRadius = 0)
     {
         var texture = new Texture2D(2, 2, TextureFormat.RGBA32, true, linear)
         {
             name = textureName,
             wrapMode = TextureWrapMode.Repeat,
-            filterMode = FilterMode.Bilinear,
-            anisoLevel = 4
+            filterMode = FilterMode.Trilinear,
+            anisoLevel = 8,
+            mipMapBias = -0.6f
         };
 
-        if (!texture.LoadImage(ReadBytes(archive, name), true))
+        if (!texture.LoadImage(ReadBytes(archive, name), false))
         {
             UnityEngine.Object.Destroy(texture);
             throw new InvalidDataException($"The embedded texture '{name}' could not be decoded.");
         }
 
+        if (alphaDilationRadius > 0)
+        {
+            DilateAlpha(texture, alphaDilationRadius);
+        }
+
+        texture.Apply(true, true);
         return texture;
+    }
+
+    private static void DilateAlpha(Texture2D texture, int radius)
+    {
+        var width = texture.width;
+        var height = texture.height;
+        var source = texture.GetPixels32();
+        var horizontal = new Color32[source.Length];
+        var output = new Color32[source.Length];
+
+        for (var y = 0; y < height; y++)
+        {
+            var row = y * width;
+            for (var x = 0; x < width; x++)
+            {
+                var best = source[row + x];
+                var minimumX = Math.Max(0, x - radius);
+                var maximumX = Math.Min(width - 1, x + radius);
+                for (var sampleX = minimumX; sampleX <= maximumX; sampleX++)
+                {
+                    var sample = source[row + sampleX];
+                    if (sample.a > best.a)
+                    {
+                        best = sample;
+                    }
+                }
+
+                horizontal[row + x] = best;
+            }
+        }
+
+        for (var y = 0; y < height; y++)
+        {
+            var minimumY = Math.Max(0, y - radius);
+            var maximumY = Math.Min(height - 1, y + radius);
+            for (var x = 0; x < width; x++)
+            {
+                var best = horizontal[y * width + x];
+                for (var sampleY = minimumY; sampleY <= maximumY; sampleY++)
+                {
+                    var sample = horizontal[sampleY * width + x];
+                    if (sample.a > best.a)
+                    {
+                        best = sample;
+                    }
+                }
+
+                output[y * width + x] = best;
+            }
+        }
+
+        texture.SetPixels32(output);
     }
 
     private static Material CreateMaterial(Texture albedo, Texture metallic, Texture normal)
@@ -180,7 +244,7 @@ internal sealed class BarbedWireVisualAssets : IDisposable
         material.SetTexture("_MetallicGlossMap", metallic);
         material.SetTexture("_BumpMap", normal);
         material.SetFloat("_Mode", 1f);
-        material.SetFloat("_Cutoff", 0.32f);
+        material.SetFloat("_Cutoff", 0.18f);
         material.SetFloat("_Metallic", 1f);
         material.SetFloat("_GlossMapScale", 0.85f);
         material.SetFloat("_BumpScale", 1f);

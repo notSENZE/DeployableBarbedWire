@@ -11,7 +11,7 @@ public sealed class DeployableBarbedWirePlugin : BaseUnityPlugin
 {
     internal const string PluginGuid = "com.senze.deployablebarbedwire";
     internal const string PluginName = "Deployable Barbed Wire";
-    internal const string PluginVersion = "1.0.0";
+    internal const string PluginVersion = "1.0.1";
     private const string LegacyModuleTypeName = "SPTEssentials.Client.BarbedWire.DeployableBarbedWireModule";
 
     internal static ManualLogSource Log { get; private set; }
