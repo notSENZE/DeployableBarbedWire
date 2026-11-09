@@ -4,7 +4,7 @@ Under The Forge's rules, mods that aren't released there aren't supported.
 This means that if you run into an issue that might be related to one of my mods, you may be denied support or advised to remove the mod.
 If you experience any issues with my mods, please join my [Discord](https://discord.gg/PD5TPQFKpa) for support.
 
-# ABOUT DEBLOYABLE BARBED WIRE
+# ABOUT DEPLOYABLE BARBED WIRE
 The mod lets you buy barbed wire at Prapor LL 1. Only two can be carried at the same time. Can be placed in raid and can be removed without losing it.
 Press `Insert` to open build menue and to see further instructions. 
 
